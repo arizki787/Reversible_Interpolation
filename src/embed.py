@@ -3,7 +3,7 @@ import random #for creating secret key
 import math
 import numpy as np
 
-selected_pixels = set()
+interpolated_pixel = set()
 
 def MNMI(imgPath, resPath): #modified neighbor mean interpolation
     #get size of original image
@@ -38,7 +38,7 @@ def MNMI(imgPath, resPath): #modified neighbor mean interpolation
                 bottom_left = enlarged_array[i + 1, j - 2] if (i + 1 < heightCvr and j - 2 >= 0) else 0
 
                 enlarged_array[i, j] = (2 * int(top) + 2 * int(bottom) + int(top_left) + int(bottom_left)) // 6
-                selected_pixels.add((i, j))
+                interpolated_pixel.add((i, j))
             elif j % 2 == 1 and i == widthCvr - 1:
                 left = enlarged_array[i, j - 1] if j - 1 >= 0 else 0
                 right = enlarged_array[i, j + 1] if j + 1 < widthCvr else 0
@@ -46,7 +46,7 @@ def MNMI(imgPath, resPath): #modified neighbor mean interpolation
                 top_right = enlarged_array[i - 2, j + 1] if (i - 2 >= 0 and j + 1 < widthCvr) else 0
 
                 enlarged_array[i, j] = (2 * int(left) + 2 * int(right) + int(top_left) + int(top_right)) // 6
-                selected_pixels.add((i, j))
+                interpolated_pixel.add((i, j))
             elif i % 2 == 0 and j % 2 == 1 and i < widthCvr - 1:
                 left = enlarged_array[i, j - 1] if j - 1 >= 0 else 0
                 right = enlarged_array[i, j + 1] if j + 1 < widthCvr else 0
@@ -54,7 +54,7 @@ def MNMI(imgPath, resPath): #modified neighbor mean interpolation
                 bottom_right = enlarged_array[i + 2, j + 1] if (i + 2 < heightCvr and j + 1 < widthCvr) else 0
 
                 enlarged_array[i, j] = (2 * int(left) + 2 * int(right) + int(bottom_left) + int(bottom_right)) // 6
-                selected_pixels.add((i, j))
+                interpolated_pixel.add((i, j))
 
             elif i % 2 == 1 and j % 2 == 0 and j < widthCvr - 1:
                 top = enlarged_array[i - 1, j] if i - 1 >= 0 else 0
@@ -63,7 +63,7 @@ def MNMI(imgPath, resPath): #modified neighbor mean interpolation
                 bottom_right = enlarged_array[i + 1, j + 2] if (i + 1 < heightCvr and j + 2 < widthCvr) else 0
 
                 enlarged_array[i, j] = (2 * int(top) + 2 * int(bottom) + int(top_right) + int(bottom_right)) // 6
-                selected_pixels.add((i, j))
+                interpolated_pixel.add((i, j))
             else:
                 top_left = enlarged_array[i - 1, j - 1] if (i - 1 >= 0 and j - 1 >= 0 ) else 0
                 top_right = enlarged_array[i - 1, j + 1] if (i - 1 >= 0 and j + 1 < widthCvr) else 0
@@ -71,17 +71,16 @@ def MNMI(imgPath, resPath): #modified neighbor mean interpolation
                 bottom_right = enlarged_array[i + 1, j + 1] if (i + 1 < heightCvr and j + 1 < widthCvr) else 0
 
                 enlarged_array[i, j] = (int(top_left) + int(top_right) + int(bottom_left) + int(bottom_right)) // 4
-                selected_pixels.add((i, j))
+                interpolated_pixel.add((i, j))
 
     resImg = Image.fromarray(enlarged_array)
 
     resImg.save(resPath)
 
 def secretKeyGeneration(pixel_positions):
-    pixel_positions = list(pixel_positions)
-    random.shuffle(pixel_positions)
     secret_key = ';'.join([f"{x},{y}" for x, y in pixel_positions]) #convert to string
-    return secret_key
+    with open("./data/secret_key.txt", "w") as f:
+        f.write(secret_key)
 
 def secret_data_bits(secretDataPath):
     with open(secretDataPath, 'r') as secretDataFile:
@@ -94,7 +93,9 @@ def secret_data_bits(secretDataPath):
 def embedding(secretDataBits, pixel_positions, imgPath, resPath):
 
     # Convert pixel positions to list for indexing
-    pixel_positions = list(pixel_positions)
+    interpolated_pixel_position = list(pixel_positions)
+    rand_pixel_positions = random.sample(interpolated_pixel_position, len(secretDataBits))
+    choosen_pixel_positions = []
     
     # Open and convert image to numpy array
     img = Image.open(imgPath).convert("L")
@@ -103,9 +104,9 @@ def embedding(secretDataBits, pixel_positions, imgPath, resPath):
     # Track current position in secret data
     data_index = 0
     data_len = len(secretDataBits)
-    
+
     # Process each selected pixel
-    for pos in pixel_positions:
+    for pos in rand_pixel_positions:
         if data_index >= data_len:
             break
             
@@ -134,8 +135,10 @@ def embedding(secretDataBits, pixel_positions, imgPath, resPath):
         # Update pixel value
         img_array[i, j] = int(new_pixel, 2)
         data_index += num_bits
-
-    
+        # Save pixel position
+        
+        choosen_pixel_positions.append(pos)
+    secretKeyGeneration(choosen_pixel_positions)
     # Save result image
     result_img = Image.fromarray(img_array)
     result_img.save(resPath)
@@ -171,7 +174,7 @@ MNMI(ori_img_path, cvr_res_path)
 
 #embedding
 secretDataBits = secret_data_bits(data_path)
-embedding(secretDataBits, selected_pixels, cvr_res_path, stg_res_path)  
+embedding(secretDataBits, interpolated_pixel, cvr_res_path, stg_res_path)  
 
 # Calculate PSNR
 print("PSNR:", calculate_psnr(cvr_res_path, stg_res_path))
