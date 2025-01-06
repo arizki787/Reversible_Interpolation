@@ -2,7 +2,6 @@ from PIL import Image
 import random #for creating secret key
 import math
 import numpy as np
-from skimage.metrics import structural_similarity as ssim
 
 selected_pixels = set()
 
@@ -141,6 +140,25 @@ def embedding(secretDataBits, pixel_positions, imgPath, resPath):
     result_img = Image.fromarray(img_array)
     result_img.save(resPath)
 
+def countMSE(stgImg, oriImg):
+    stegoImage = Image.open(stgImg).convert("L")
+    originalImage = Image.open(oriImg).convert("L")
+
+    width, height = stegoImage.size
+    MSE = 0
+    for x in range(width):
+        for y in range(height):
+            MSE += (stegoImage.getpixel((x, y)) - originalImage.getpixel((x, y))) ** 2
+
+    MSE /= (width * height)
+    return MSE
+
+def calculate_psnr(stgImg, oriImg):
+    MSE = countMSE(stgImg, oriImg)
+    PSNR = 10 * math.log10((255 ** 2) / MSE)
+    return PSNR
+
+
 data_path = "./data/datatst.txt"
 ori_img_path = "./img/ori/6x6.png"
 
@@ -150,12 +168,10 @@ stg_res_path = "./img/res/6x6_stg.png"
 
 #interpolation
 MNMI(ori_img_path, cvr_res_path)
-#secret key
-secretKey = secretKeyGeneration(selected_pixels)
-f = open("data/secret_key.txt", "w")
-f.write(secretKey)
-f.close()
 
 #embedding
 secretDataBits = secret_data_bits(data_path)
 embedding(secretDataBits, selected_pixels, cvr_res_path, stg_res_path)  
+
+# Calculate PSNR
+print("PSNR:", calculate_psnr(cvr_res_path, stg_res_path))
