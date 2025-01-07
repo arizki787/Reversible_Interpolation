@@ -106,38 +106,42 @@ def embedding(secretDataBits, pixel_positions, imgPath, resPath):
     data_len = len(secretDataBits)
 
     # Process each selected pixel
-    for pos in rand_pixel_positions:
-        if data_index >= data_len:
-            break
+    with open("logEmbed.txt", "w") as log_file:
+        for pos in rand_pixel_positions:
+            if data_index >= data_len:
+                break
+                
+            i, j = pos
+            pixel_val = img_array[i, j]
             
-        i, j = pos
-        pixel_val = img_array[i, j]
-        
-        # Determine number of LSBs to replace based on pixel value
-        if (0 <= pixel_val <= 15) or (192 <= pixel_val <= 255):
-            num_bits = 4
-        elif 32 <= pixel_val <= 191:
-            num_bits = 2
-        else:  # 16-31
-            num_bits = 3
+            # Determine number of LSBs to replace based on pixel value
+            if (0 <= pixel_val <= 15) or (192 <= pixel_val <= 255):
+                num_bits = 4
+            elif 32 <= pixel_val <= 191:
+                num_bits = 2
+            else:  # 16-31
+                num_bits = 3
+                
+            # Calculate remaining bits and pad with zeros at start if needed
+            remaining = data_len - data_index
+            if remaining < num_bits:
+                bits_to_embed = ['0'] * (num_bits - remaining) + secretDataBits[data_index:]
+            else:
+                bits_to_embed = secretDataBits[data_index:data_index + num_bits]
+                
+            # Convert pixel value to binary and keep MSBs
+            bin_pixel = format(pixel_val, '08b')
+            new_pixel = bin_pixel[:-num_bits] + ''.join(bits_to_embed)
+            # print(F"BITS TO EMBED: {bits_to_embed}, pixel position: {pos}")
             
-        # Calculate remaining bits and pad with zeros at start if needed
-        remaining = data_len - data_index
-        if remaining < num_bits:
-            bits_to_embed = ['0'] * (num_bits - remaining) + secretDataBits[data_index:]
-        else:
-            bits_to_embed = secretDataBits[data_index:data_index + num_bits]
+            # Update pixel value
+            img_array[i, j] = int(new_pixel, 2)
+            data_index += num_bits
             
-        # Convert pixel value to binary and keep MSBs
-        bin_pixel = format(pixel_val, '08b')
-        new_pixel = bin_pixel[:-num_bits] + ''.join(bits_to_embed)
-        
-        # Update pixel value
-        img_array[i, j] = int(new_pixel, 2)
-        data_index += num_bits
-        # Save pixel position
-        
-        choosen_pixel_positions.append(pos)
+            lsb_str = ''.join(bits_to_embed)
+            log_file.write(f"pixel_val: {img_array[i, j]:<5} lsb: {lsb_str:<8} pixelPos: {pos}\n")
+            # Save pixel position
+            choosen_pixel_positions.append(pos)
     secretKeyGeneration(choosen_pixel_positions)
     # Save result image
     result_img = Image.fromarray(img_array)
