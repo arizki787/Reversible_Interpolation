@@ -162,12 +162,12 @@ def calculate_psnr(stgImg, oriImg):
     return PSNR
 
 
-data_path = "./data/datatst.txt"
-ori_img_path = "./img/ori/6x6.png"
+data_path = "./data/data3kb.txt"
+ori_img_path = "./img/ori/axial2.bmp"
 
 #resPath
-cvr_res_path = "./img/cvr/6x6_cvr.png"
-stg_res_path = "./img/res/6x6_stg.png"
+cvr_res_path = "./img/cvr/axial2_cvr.bmp"
+stg_res_path = "./img/res/axial2_stg.bmp"
 
 #interpolation
 MNMI(ori_img_path, cvr_res_path)

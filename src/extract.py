@@ -19,19 +19,18 @@ def extract_data(pixel_positions, stg_img):
         if (0 <= pixel_val <= 15) or (195 <= pixel_val <= 255):
             # Extract 4 LSBs
             lsb = format(pixel_val, '08b')[-4:]
-            print(f"pixel_val: {pixel_val}, lsb: {lsb}, pixelPos: {pixelPos}")
+
         elif 32 <= pixel_val <= 191:
             # Extract 2 LSBs
             lsb = format(pixel_val, '08b')[-2:]
-            print(f"pixel_val: {pixel_val}, lsb: {lsb}, pixelPos: {pixelPos}")
+
         else: # 16 - 31
             # Extract 3 LSBs
             lsb = format(pixel_val, '08b')[-3:]
-            print(f"pixel_val: {pixel_val}, lsb: {lsb}, pixelPos: {pixelPos}")
+
         
         sdb.extend(lsb)
     
-    print(len(sdb))
     return sdb
 
 def extract_original_image(stg_img, ori_img_path):
@@ -55,13 +54,12 @@ def extract_original_image(stg_img, ori_img_path):
     oriImg.save(ori_img_path)
 
 secretKey = "data/secret_key.txt"
-stegoImg = "img/res/6x6_stg.png"
+stegoImg = "img/res/axial2_stg.bmp"
 resPath = "data/extract.txt"
-oriImgPath = "img/ori/ext_ori_6x6.png"
+oriImgPath = "img/ori/extract_ori_axial2.bmp"
 
 #parse secret key
 pixel_positions = parse_secret_key(secretKey)
-print(f"len {len(pixel_positions)} pixel_positions: {pixel_positions}")
 #extract data
 secretDataBits = extract_data(pixel_positions, stegoImg)
 result = []
